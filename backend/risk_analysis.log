@@ -1,0 +1,58 @@
+2025-04-12 18:22:54,721 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:22:55,015 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=1y)
+2025-04-12 18:22:55,017 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=6mo)
+2025-04-12 18:22:55,019 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=3mo)
+2025-04-12 18:22:55,020 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=1y)
+2025-04-12 18:22:55,020 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=1mo)
+2025-04-12 18:22:55,021 - root - ERROR - Error in risk analysis model for MSFT: module 'yfinance.shared' has no attribute 'exceptions'
+2025-04-12 18:22:55,022 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=6mo)
+2025-04-12 18:22:55,023 - root - ERROR - Traceback (most recent call last):
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 69, in get_stock_data
+    raise ValueError(f"No data found for ticker: {ticker}")
+ValueError: No data found for ticker: MSFT
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 314, in risk_analysis_model
+    data = get_stock_data(new_stock_ticker)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 73, in get_stock_data
+    except yf.shared.exceptions.YFinanceError as yfe:
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'yfinance.shared' has no attribute 'exceptions'
+
+2025-04-12 18:22:55,023 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=3mo)
+2025-04-12 18:22:55,025 - yfinance - ERROR - MSFT: No price data found, symbol may be delisted (period=1mo)
+2025-04-12 18:22:55,026 - root - ERROR - Error in risk analysis model for MSFT: module 'yfinance.shared' has no attribute 'exceptions'
+2025-04-12 18:22:55,027 - root - ERROR - Traceback (most recent call last):
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 69, in get_stock_data
+    raise ValueError(f"No data found for ticker: {ticker}")
+ValueError: No data found for ticker: MSFT
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 314, in risk_analysis_model
+    data = get_stock_data(new_stock_ticker)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Git_Project\Stock_Flipr\backend\python\risk_analysis.py", line 73, in get_stock_data
+    except yf.shared.exceptions.YFinanceError as yfe:
+           ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'yfinance.shared' has no attribute 'exceptions'
+
+2025-04-12 18:25:57,126 - root - INFO - Performing risk analysis for GOOGL
+2025-04-12 18:26:19,653 - root - INFO - Performing risk analysis for GOOGL
+2025-04-12 18:26:29,909 - root - INFO - Model for GOOGL trained and saved with accuracy: 0.9018
+2025-04-12 18:26:44,553 - root - INFO - Model for GOOGL trained and saved with accuracy: 0.9018
+2025-04-12 18:27:41,872 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:28:07,905 - root - INFO - Model for AMZN trained and saved with accuracy: 0.8655
+2025-04-12 18:31:06,118 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:31:11,316 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:31:22,367 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:31:27,029 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:31:44,786 - root - INFO - Performing risk analysis for TCS.TO
+2025-04-12 18:32:05,137 - root - INFO - Model for TCS.TO trained and saved with accuracy: 0.9218
+2025-04-12 18:32:44,135 - root - INFO - Performing risk analysis for TCS.TO
+2025-04-12 18:32:57,013 - root - INFO - Performing risk analysis for TCS.TO
+2025-04-12 18:36:39,789 - root - INFO - Performing risk analysis for TCS.TO

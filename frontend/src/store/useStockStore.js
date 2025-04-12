@@ -24,7 +24,29 @@ export const useStockStore = create((set, get) => ({
   watchlist: [],
   isWatchlistLoading: false,
   industries: [],
+  riskData: null,
+  isRiskLoading: false,
 
+  getRiskAnalysis: async (symbol) => {
+    set({ isRiskLoading: true, error: null });
+    try {
+      const res = await axiosInstance.get(`/api/stocks/${symbol}/risk-analysis`);
+      set({
+        riskData: res.data,
+        isRiskLoading: false
+      });
+      return res.data;
+    } catch (err) {
+      console.error('getRiskAnalysis error:', err);
+      set({
+        riskData: { error: "Failed to fetch risk data." },
+        isRiskLoading: false,
+        error: err.message
+      });
+      return null;
+    }
+  },
+  
   searchStocks: async (query) => {
     if (!query || query.length < 2) {
       return set({ searchResults: [] });

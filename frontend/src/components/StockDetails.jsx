@@ -23,13 +23,13 @@ const StockDetails = () => {
     selectedStock,
     stockDetails,
     stockInsights,
-    riskAnalysisData,  // New state property
+    riskData,  // New state property
     isStockDetailsLoading,
     isInsightsLoading,
-    isRiskAnalysisLoading, // New loading state
+    isRiskLoading, // New loading state
     getStockDetails,
     getStockInsights,
-    //getRiskAnalysis, // New function to fetch risk analysis
+    getRiskAnalysis, // New function to fetch risk analysis
   } = useStockStore();
 
   const detailsEndRef = useRef(null);
@@ -41,9 +41,9 @@ const StockDetails = () => {
     if (selectedStock && selectedStock.symbol) {
       getStockDetails(selectedStock.symbol);
       getStockInsights(selectedStock.symbol);
-      //getRiskAnalysis(selectedStock.symbol);
+      getRiskAnalysis(selectedStock.symbol);
     }
-  }, [selectedStock, getStockDetails, getStockInsights]);
+  }, [selectedStock, getStockDetails, getStockInsights, getRiskAnalysis]);
 
   // useEffect(() => {
   //   if (detailsEndRef.current) {
@@ -133,7 +133,7 @@ const StockDetails = () => {
     high: item.high, 
     low: item.low,
     volume: item.volume
-  })).reverse();
+  }));
   
   // Calculate price change
   const latest = stockDetails.current_quote || {};
@@ -545,8 +545,8 @@ const StockDetails = () => {
         )}
         <RiskAnalysis 
           stockSymbol={selectedStock?.symbol}
-          riskData={riskAnalysisData}
-          isLoading={isRiskAnalysisLoading}
+          riskData={riskData}
+          isLoading={isRiskLoading}
         />
         {/* Recent News */}
         {stockDetails.news && stockDetails.news.length > 0 && (
