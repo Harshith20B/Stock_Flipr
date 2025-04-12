@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStockStore } from "../store/useStockStore";
+import axios from 'axios';
 import {
   ArrowUpCircle,
   ArrowDownCircle,
