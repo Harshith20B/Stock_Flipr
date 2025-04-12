@@ -1,11 +1,20 @@
 // controllers/watchlistController.js
 const User = require('../models/User');
-const Stock = require('../models/Stock');
+const axios = require('axios');
+const yfinance = require('yahoo-finance2').default;
+
+// API Configuration
+const FMP_API_KEY = process.env.FMP_API_KEY || 'YOUR_FMP_API_KEY'; // Add this to your .env file
+const BASE_URL = 'https://financialmodelingprep.com/api';
 
 // Get user's watchlist with detailed stock information
 const getWatchlist = async (req, res) => {
   try {
-    const userId = req.session.user?.id || req.user._id;
+    const userId = req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     
     // Find user and populate with watchlist symbols
     const user = await User.findById(userId).select('watchlist');
@@ -22,19 +31,38 @@ const getWatchlist = async (req, res) => {
     // Extract symbols from user's watchlist
     const symbols = user.watchlist.map(item => item.symbol);
     
-    // Fetch stock details for the watchlist symbols
-    const stocks = await Stock.find({ symbol: { $in: symbols } })
-      .select('symbol name latestPrice latestChange lastUpdated');
+    // Fetch current stock details for each watchlist item
+    const watchlistWithDetails = [];
     
-    // Map the stock data to the watchlist format
-    const watchlistWithDetails = stocks.map(stock => ({
-      _id: stock._id,
-      symbol: stock.symbol,
-      name: stock.name,
-      price: stock.latestPrice,
-      change: stock.latestChange,
-      lastUpdated: stock.lastUpdated
-    }));
+    await Promise.all(
+      symbols.map(async (symbol) => {
+        try {
+          const quote = await yfinance.quote(symbol);
+          
+          if (quote) {
+            watchlistWithDetails.push({
+              symbol: symbol,
+              name: quote.shortName || quote.longName || symbol,
+              price: quote.regularMarketPrice || 0,
+              change: quote.regularMarketChange || 0,
+              changePercent: quote.regularMarketChangePercent || 0,
+              lastUpdated: new Date()
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching details for ${symbol}:`, error);
+          // Add basic info if API call fails
+          watchlistWithDetails.push({
+            symbol: symbol,
+            name: symbol,
+            price: 0,
+            change: 0,
+            changePercent: 0,
+            lastUpdated: new Date()
+          });
+        }
+      })
+    );
     
     res.status(200).json({ 
       watchlist: watchlistWithDetails
@@ -49,17 +77,14 @@ const getWatchlist = async (req, res) => {
 const addToWatchlist = async (req, res) => {
   try {
     const { symbol } = req.body;
-    const userId = req.session.user?.id || req.user._id;
+    const userId = req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     
     if (!symbol) {
       return res.status(400).json({ message: 'Symbol is required' });
-    }
-    
-    // Check if stock exists in database
-    const stock = await Stock.findOne({ symbol });
-    
-    if (!stock) {
-      return res.status(404).json({ message: 'Stock not found' });
     }
     
     // Find user
@@ -76,26 +101,38 @@ const addToWatchlist = async (req, res) => {
       return res.status(400).json({ message: 'Stock already in watchlist' });
     }
     
-    // Add stock to watchlist
-    user.watchlist.push({
-      symbol,
-      addedAt: Date.now()
-    });
-    
-    await user.save();
-    
-    // Return the complete stock information
-    res.status(200).json({ 
-      message: 'Stock added to watchlist',
-      stock: {
-        _id: stock._id,
-        symbol: stock.symbol,
-        name: stock.name,
-        price: stock.latestPrice,
-        change: stock.latestChange,
-        lastUpdated: stock.lastUpdated
+    // Verify the stock exists by fetching its details from Yahoo Finance
+    try {
+      const quote = await yfinance.quote(symbol);
+      
+      if (!quote) {
+        return res.status(404).json({ message: 'Stock not found' });
       }
-    });
+      
+      // Add stock to watchlist
+      user.watchlist.push({
+        symbol,
+        addedAt: Date.now()
+      });
+      
+      await user.save();
+      
+      // Return the stock information
+      res.status(200).json({ 
+        message: 'Stock added to watchlist',
+        stock: {
+          symbol: symbol,
+          name: quote.shortName || quote.longName || symbol,
+          price: quote.regularMarketPrice || 0,
+          change: quote.regularMarketChange || 0,
+          changePercent: quote.regularMarketChangePercent || 0,
+          lastUpdated: new Date()
+        }
+      });
+    } catch (error) {
+      console.error(`Error verifying stock ${symbol}:`, error);
+      return res.status(404).json({ message: 'Unable to verify stock symbol' });
+    }
   } catch (error) {
     console.error('Error adding to watchlist:', error);
     res.status(500).json({ message: 'Something went wrong', error: error.message });
@@ -106,7 +143,11 @@ const addToWatchlist = async (req, res) => {
 const removeFromWatchlist = async (req, res) => {
   try {
     const { symbol } = req.params;
-    const userId = req.session.user?.id || req.user._id;
+    const userId = req.user?._id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
     
     // Find user
     const user = await User.findById(userId);
