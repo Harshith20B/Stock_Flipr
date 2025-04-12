@@ -40,11 +40,11 @@ const StockDetails = () => {
     }
   }, [selectedStock, getStockDetails, getStockInsights]);
 
-  useEffect(() => {
-    if (detailsEndRef.current) {
-      detailsEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [stockDetails]);
+  // useEffect(() => {
+  //   if (detailsEndRef.current) {
+  //     detailsEndRef.current.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [stockDetails]);
 
   if (isStockDetailsLoading) {
     return (
