@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useStockStore } from "../store/useStockStore";
-import { 
-  ArrowUpCircle, 
-  ArrowDownCircle, 
-  TrendingUp, 
-  Activity, 
-  DollarSign, 
-  BarChart4, 
+import {
+  ArrowUpCircle,
+  ArrowDownCircle,
+  TrendingUp,
+  Activity,
+  DollarSign,
+  BarChart4,
   Calendar,
   TrendingDown,
   Globe,
@@ -91,7 +91,7 @@ const StockDetails = () => {
 
     const now = new Date();
     let startDate = new Date();
-    
+
     switch (activeTimeframe) {
       case "1W":
         startDate.setDate(now.getDate() - 7);
@@ -119,57 +119,57 @@ const StockDetails = () => {
   };
 
   const filteredData = getFilteredHistoricalData();
-  
+
   // Format data for charts
   const chartData = filteredData.map(item => ({
-    date: new Date(item.date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'}),
+    date: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
     close: item.close,
     open: item.open,
-    high: item.high, 
+    high: item.high,
     low: item.low,
     volume: item.volume
   })).reverse();
-  
+
   // Calculate price change
   const latest = stockDetails.current_quote || {};
   const priceChange = latest.change_percent || 0;
   const isPriceUp = priceChange >= 0;
-  
+
   // Calculate key metrics
   const calculateMetrics = () => {
     if (!chartData || chartData.length === 0) return {};
-    
+
     const prices = chartData.map(d => d.close);
     const highs = chartData.map(d => d.high);
     const lows = chartData.map(d => d.low);
-    
+
     // Simple moving averages
     const sma20 = prices.slice(-20).reduce((a, b) => a + b, 0) / Math.min(20, prices.length);
     const sma50 = prices.slice(-50).reduce((a, b) => a + b, 0) / Math.min(50, prices.length);
-    
+
     // Relative Strength
     const firstPrice = prices[0] || 0;
     const lastPrice = prices[prices.length - 1] || 0;
     const percentChange = firstPrice ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
-    
+
     // Volatility - standard deviation of daily returns
     const dailyReturns = [];
     for (let i = 1; i < prices.length; i++) {
-      dailyReturns.push((prices[i] - prices[i-1]) / prices[i-1]);
+      dailyReturns.push((prices[i] - prices[i - 1]) / prices[i - 1]);
     }
     const avgReturn = dailyReturns.reduce((a, b) => a + b, 0) / dailyReturns.length;
     const squaredDiffs = dailyReturns.map(r => Math.pow(r - avgReturn, 2));
     const variance = squaredDiffs.reduce((a, b) => a + b, 0) / squaredDiffs.length;
     const volatility = Math.sqrt(variance) * 100; // as percentage
-    
+
     // Average volume
     const volumes = chartData.map(d => d.volume);
     const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
-    
+
     // Highest high and lowest low
     const highestHigh = Math.max(...highs);
     const lowestLow = Math.min(...lows);
-    
+
     return {
       sma20: sma20.toFixed(2),
       sma50: sma50.toFixed(2),
@@ -180,7 +180,7 @@ const StockDetails = () => {
       lowestLow: lowestLow.toFixed(2),
     };
   };
-  
+
   const metrics = calculateMetrics();
 
   const handleExportData = () => {
@@ -199,7 +199,7 @@ const StockDetails = () => {
         ].join(",");
       })
     ].join("\n");
-    
+
     // Create download link
     const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
     const link = document.createElement("a");
@@ -228,7 +228,7 @@ const StockDetails = () => {
               </span>
             )}
           </div>
-          
+
           {latest && (
             <div className="mt-2 md:mt-0 flex items-center">
               {isPriceUp ? (
@@ -236,14 +236,13 @@ const StockDetails = () => {
               ) : (
                 <ArrowDownCircle className="h-5 w-5 text-red-500 mr-1" />
               )}
-              <span className={`text-sm font-medium ${
-                isPriceUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}>
+              <span className={`text-sm font-medium ${isPriceUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                }`}>
                 {isPriceUp ? '+' : ''}{priceChange.toFixed(2)}%
               </span>
             </div>
           )}
-        </div>
+        </div>  
       </div>
 
       {/* Scrollable Details with visual improvements */}
@@ -254,19 +253,19 @@ const StockDetails = () => {
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2 md:mb-0">Price Chart</h3>
             <div className="inline-flex items-center">
               <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-1 flex space-x-1">
-                <button 
+                <button
                   className={`px-3 py-1 text-sm rounded-md transition-colors ${activePriceTab === 'price' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                   onClick={() => setActivePriceTab('price')}
                 >
                   Price
                 </button>
-                <button 
+                <button
                   className={`px-3 py-1 text-sm rounded-md transition-colors ${activePriceTab === 'volume' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                   onClick={() => setActivePriceTab('volume')}
                 >
                   Volume
                 </button>
-                <button 
+                <button
                   className={`px-3 py-1 text-sm rounded-md transition-colors ${activePriceTab === 'candle' ? 'bg-blue-500 text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-600'}`}
                   onClick={() => setActivePriceTab('candle')}
                 >
@@ -275,7 +274,7 @@ const StockDetails = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="mb-4">
             <div className="flex justify-center md:justify-start space-x-2 overflow-x-auto pb-2">
               {['1W', '1M', '3M', '6M', '1Y', 'ALL'].map((timeframe) => (
@@ -289,19 +288,19 @@ const StockDetails = () => {
               ))}
             </div>
           </div>
-          
+
           <div className="h-64 md:h-80">
             <ResponsiveContainer width="100%" height="100%">
               {activePriceTab === 'price' && (
                 <AreaChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                   <defs>
                     <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#0088FE" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#0088FE" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#0088FE" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
                       if (chartData.length > 30) {
@@ -311,30 +310,30 @@ const StockDetails = () => {
                       return value;
                     }}
                   />
-                  <YAxis 
+                  <YAxis
                     domain={['auto', 'auto']}
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `$${value}`}
                   />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => [`$${value}`, 'Price']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="close" 
-                    stroke="#0088FE" 
-                    fillOpacity={1} 
-                    fill="url(#colorPrice)" 
+                  <Area
+                    type="monotone"
+                    dataKey="close"
+                    stroke="#0088FE"
+                    fillOpacity={1}
+                    fill="url(#colorPrice)"
                   />
                 </AreaChart>
               )}
-              
+
               {activePriceTab === 'volume' && (
                 <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
                       if (chartData.length > 30) {
@@ -343,7 +342,7 @@ const StockDetails = () => {
                       return value;
                     }}
                   />
-                  <YAxis 
+                  <YAxis
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
@@ -352,19 +351,19 @@ const StockDetails = () => {
                     }}
                   />
                   <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => [value.toLocaleString(), 'Volume']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
                   <Bar dataKey="volume" fill="#8884d8" />
                 </BarChart>
               )}
-              
+
               {activePriceTab === 'candle' && (
                 <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date" 
+                  <XAxis
+                    dataKey="date"
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
                       if (chartData.length > 30) {
@@ -373,12 +372,12 @@ const StockDetails = () => {
                       return value;
                     }}
                   />
-                  <YAxis 
+                  <YAxis
                     domain={['auto', 'auto']}
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => `$${value}`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => [`$${value}`, '']}
                     labelFormatter={(label) => `Date: ${label}`}
                   />
@@ -407,7 +406,7 @@ const StockDetails = () => {
               <div><span className="text-gray-600 dark:text-gray-400">Industry:</span> <span className="font-medium">{stockDetails.profile.industry}</span></div>
               <div><span className="text-gray-600 dark:text-gray-400">Country:</span> <span className="font-medium">{stockDetails.profile.country}</span></div>
               <div className="col-span-2">
-                <span className="text-gray-600 dark:text-gray-400">Website:</span> 
+                <span className="text-gray-600 dark:text-gray-400">Website:</span>
                 <a href={stockDetails.profile.website} target="_blank" rel="noopener noreferrer" className="ml-1 text-blue-500 hover:underline font-medium flex items-center">
                   <Globe className="h-4 w-4 mr-1" />
                   Visit Website
@@ -464,7 +463,7 @@ const StockDetails = () => {
               <TrendingUp className="h-6 w-6 text-purple-600 dark:text-purple-400 mr-2" />
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Market Sentiment & Insights</h3>
             </div>
-            
+
             {isInsightsLoading ? (
               <div className="flex justify-center p-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
@@ -475,13 +474,12 @@ const StockDetails = () => {
                 {stockInsights.sentiment && (
                   <div className="flex items-center mb-4">
                     <span className="text-gray-600 dark:text-gray-400 mr-2">Overall Sentiment:</span>
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      stockInsights.sentiment.overall_prediction === 'Bullish' 
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${stockInsights.sentiment.overall_prediction === 'Bullish'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                         : stockInsights.sentiment.overall_prediction === 'Bearish'
                           ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                    }`}>
+                      }`}>
                       {stockInsights.sentiment.overall_prediction}
                       {stockInsights.sentiment.confidence && (
                         <span className="ml-1 text-xs">({stockInsights.sentiment.confidence}% confidence)</span>
@@ -489,7 +487,7 @@ const StockDetails = () => {
                     </span>
                   </div>
                 )}
-                
+
                 {/* Trends */}
                 {stockInsights.trends && stockInsights.trends.length > 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
@@ -501,30 +499,28 @@ const StockDetails = () => {
                     ))}
                   </div>
                 )}
-                
+
                 {/* Recommendation */}
                 {stockInsights.recommendation && (
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
                     <div className="flex items-start">
-                      <div className={`rounded-full p-2 mr-3 ${
-                        stockInsights.recommendation.action === 'Buy' 
-                          ? 'bg-green-100 dark:bg-green-900' 
+                      <div className={`rounded-full p-2 mr-3 ${stockInsights.recommendation.action === 'Buy'
+                          ? 'bg-green-100 dark:bg-green-900'
                           : stockInsights.recommendation.action === 'Sell'
                             ? 'bg-red-100 dark:bg-red-900'
                             : 'bg-yellow-100 dark:bg-yellow-900'
-                      }`}>
+                        }`}>
                         {stockInsights.recommendation.action === 'Buy' && <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />}
                         {stockInsights.recommendation.action === 'Sell' && <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />}
                         {stockInsights.recommendation.action === 'Hold' && <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />}
                       </div>
                       <div>
-                        <h4 className={`text-lg font-bold ${
-                          stockInsights.recommendation.action === 'Buy' 
-                            ? 'text-green-600 dark:text-green-400' 
+                        <h4 className={`text-lg font-bold ${stockInsights.recommendation.action === 'Buy'
+                            ? 'text-green-600 dark:text-green-400'
                             : stockInsights.recommendation.action === 'Sell'
                               ? 'text-red-600 dark:text-red-400'
                               : 'text-yellow-600 dark:text-yellow-400'
-                        }`}>
+                          }`}>
                           {stockInsights.recommendation.action}
                         </h4>
                         <p className="text-gray-700 dark:text-gray-300">
@@ -546,10 +542,10 @@ const StockDetails = () => {
             <div className="space-y-4">
               {stockDetails.news.map((item, index) => (
                 <div key={index} className="border-b border-gray-200 dark:border-gray-700 last:border-b-0 pb-4 last:pb-0">
-                  <a 
-                    href={item.link} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={item.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="block hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors rounded-lg p-2 -mx-2"
                   >
                     <h4 className="text-base font-semibold text-blue-600 dark:text-blue-400 mb-1 hover:underline">
@@ -576,60 +572,60 @@ const StockDetails = () => {
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Historical Price Data</h3>
-            <button 
-              onClick={handleExportData} 
+            <button
+              onClick={handleExportData}
               className="flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
             >
               <Download className="h-4 w-4 mr-1" />
               Export CSV
             </button>
-                      </div>
-                      
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Open</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">High</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Low</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Close</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Volume</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {stockDetails.historical_prices
-                              .slice(0, showFullTable ? undefined : 10)
-                              .map((day, index) => (
-                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.date}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.open.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.high.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.low.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.close.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.volume.toLocaleString()}</td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {stockDetails.historical_prices.length > 10 && (
-                        <div className="mt-4 text-center">
-                          <button
-                            onClick={() => setShowFullTable(!showFullTable)}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            {showFullTable ? "Show Less" : `Show All (${stockDetails.historical_prices.length} days)`}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div ref={detailsEndRef}></div>
-                  </div>
-                </div>
-              );
-            };
-            
-            export default StockDetails;
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Open</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">High</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Low</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Close</th>
+                  <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Volume</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                {stockDetails.historical_prices
+                  .slice(0, showFullTable ? undefined : 10)
+                  .map((day, index) => (
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.date}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.open.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.high.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.low.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.close.toFixed(2)}</td>
+                      <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.volume.toLocaleString()}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+
+          {stockDetails.historical_prices.length > 10 && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowFullTable(!showFullTable)}
+                className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {showFullTable ? "Show Less" : `Show All (${stockDetails.historical_prices.length} days)`}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div ref={detailsEndRef}></div>
+      </div>
+    </div>
+  );
+};
+
+export default StockDetails;

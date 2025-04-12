@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const watchlistRoutes = require('./routes/watchlistRoutes');
+const noteRoutes = require('./routes/notesRoutes');
 
 const stockRoutes = require('./routes/stockRoutes.js');
 
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/stocks', stockRoutes);
+app.use('/api/notes', noteRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
