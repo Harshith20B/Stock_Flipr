@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStockStore } from "../store/useStockStore";
+<<<<<<< HEAD
 import axios from 'axios';
 import {
   ArrowUpCircle,
@@ -8,6 +9,16 @@ import {
   Activity,
   DollarSign,
   BarChart4,
+=======
+import RiskAnalysis from "./RiskAnalysis";
+import { 
+  ArrowUpCircle, 
+  ArrowDownCircle, 
+  TrendingUp, 
+  Activity, 
+  DollarSign, 
+  BarChart4, 
+>>>>>>> 774190b519d67a2f11ce5bc3dfa328b0d1993753
   Calendar,
   TrendingDown,
   Globe,
@@ -23,10 +34,13 @@ const StockDetails = () => {
     selectedStock,
     stockDetails,
     stockInsights,
+    riskAnalysisData,  // New state property
     isStockDetailsLoading,
     isInsightsLoading,
+    isRiskAnalysisLoading, // New loading state
     getStockDetails,
     getStockInsights,
+    //getRiskAnalysis, // New function to fetch risk analysis
   } = useStockStore();
 
   const detailsEndRef = useRef(null);
@@ -38,6 +52,7 @@ const StockDetails = () => {
     if (selectedStock && selectedStock.symbol) {
       getStockDetails(selectedStock.symbol);
       getStockInsights(selectedStock.symbol);
+      //getRiskAnalysis(selectedStock.symbol);
     }
   }, [selectedStock, getStockDetails, getStockInsights]);
 
@@ -535,7 +550,11 @@ const StockDetails = () => {
             )}
           </div>
         )}
-
+        <RiskAnalysis 
+          stockSymbol={selectedStock?.symbol}
+          riskData={riskAnalysisData}
+          isLoading={isRiskAnalysisLoading}
+        />
         {/* Recent News */}
         {stockDetails.news && stockDetails.news.length > 0 && (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -568,6 +587,7 @@ const StockDetails = () => {
             </div>
           </div>
         )}
+<<<<<<< HEAD
 
         {/* Historical Data Table */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -629,4 +649,12 @@ const StockDetails = () => {
   );
 };
 
+=======
+          {/* <div ref={detailsEndRef}></div> */}
+        </div>
+      </div>
+    );
+};
+            
+>>>>>>> 774190b519d67a2f11ce5bc3dfa328b0d1993753
 export default StockDetails;

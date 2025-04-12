@@ -15,13 +15,15 @@ const StockSidebar = () => {
         getWatchlist,
         addToWatchlist,
         removeFromWatchlist,
-        industries
+        industries,
+        isLoading: storeLoading
     } = useStockStore();
 
     const [watchlistSymbols, setWatchlistSymbols] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [filteredStocks, setFilteredStocks] = useState([]);
     const [selectedIndustry, setSelectedIndustry] = useState('All');
+    const [filteredStocks, setFilteredStocks] = useState([]);
+    const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -32,20 +34,13 @@ const StockSidebar = () => {
         if (stocks && stocks.length > 0) {
             let filtered = stocks;
 
-            if (searchQuery) {
-                filtered = filtered.filter(stock =>
-                    stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    (stock.name && stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                );
-            }
-
             if (selectedIndustry !== 'All') {
                 filtered = filtered.filter(stock => stock.industry === selectedIndustry);
             }
 
             setFilteredStocks(filtered);
         }
-    }, [stocks, searchQuery, selectedIndustry]);
+    }, [stocks, selectedIndustry]);
 
     const fetchStocksAndWatchlist = async () => {
         setIsLoading(true);
@@ -62,7 +57,6 @@ const StockSidebar = () => {
 
     const toggleWatchlist = async (symbol, e) => {
         e.stopPropagation();
-
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -80,17 +74,30 @@ const StockSidebar = () => {
                 toast.success('Added to watchlist');
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to update watchlist');
+            toast.error(error?.response?.data?.message || 'Failed to update watchlist');
             console.error('Error updating watchlist:', error);
         }
     };
 
     const handleStockClick = (stock) => {
         setSelectedStock(stock);
-        navigate('/');
     };
 
-    if (isLoading) {
+    const handleInputChange = (e) => {
+        setInputValue(e.target.value);
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            setSearchQuery(inputValue);
+        }
+    };
+
+    const handleIndustryChange = (e) => {
+        setSelectedIndustry(e.target.value);
+    };
+
+    if (isLoading || storeLoading) {
         return (
             <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 p-4 flex items-center justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
@@ -99,14 +106,7 @@ const StockSidebar = () => {
     }
 
     return (
-        <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col overflow-y-auto scrollbar-hide">
-            <style jsx="true">{`
-                div::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
-
-            <div className="p-4 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
+            <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col overflow-y-auto scrollbar-none">            <div className="p-4 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
                 <div className="relative mb-3">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-4 w-4 text-gray-400" />
@@ -114,8 +114,9 @@ const StockSidebar = () => {
                     <input
                         type="text"
                         placeholder="Search stocks..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={inputValue}
+                        onChange={handleInputChange}
+                        onKeyPress={handleKeyPress}
                         className="w-full pl-10 p-2 rounded-lg border dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
@@ -124,7 +125,7 @@ const StockSidebar = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Industry</label>
                     <select
                         value={selectedIndustry}
-                        onChange={(e) => setSelectedIndustry(e.target.value)}
+                        onChange={handleIndustryChange}
                         className="w-full p-2 rounded-lg border dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="All">All</option>
@@ -138,7 +139,10 @@ const StockSidebar = () => {
             <div className="flex-1 px-2 py-2">
                 {filteredStocks.length === 0 ? (
                     <div className="text-center py-10 text-gray-500 dark:text-gray-400">
-                        No stocks found matching your criteria.
+                        {searchQuery.length > 0 ?
+                            "No stocks found matching your search." :
+                            "No stocks found matching your criteria."
+                        }
                     </div>
                 ) : (
                     <ul className="space-y-1">
@@ -155,6 +159,7 @@ const StockSidebar = () => {
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="font-medium dark:text-white">{stock.symbol}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{stock.name}</p>
                                     </div>
 
                                     <div className="flex flex-col items-end">
@@ -164,8 +169,8 @@ const StockSidebar = () => {
                                         <button
                                             onClick={(e) => toggleWatchlist(stock.symbol, e)}
                                             className={`text-xs flex items-center gap-1 mt-1 ${
-                                                watchlistSymbols.includes(stock.symbol) 
-                                                    ? "text-blue-600 dark:text-blue-400" 
+                                                watchlistSymbols.includes(stock.symbol)
+                                                    ? "text-blue-600 dark:text-blue-400"
                                                     : "text-gray-500 dark:text-gray-400"
                                             } hover:underline`}
                                         >

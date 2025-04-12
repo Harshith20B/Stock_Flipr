@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
 import DarkModeToggle from './components/DarkModeToggle';
@@ -13,10 +13,8 @@ import MainLayout from './components/MainLayout';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [user, setUser] = useState(null);
   const location = useLocation();
-  const profileMenuRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -59,26 +57,8 @@ function App() {
     setProfileMenuOpen(false);
   };
 
-  const openProfileModal = () => {
-    setShowProfileModal(true);
-    setProfileMenuOpen(false);
-  };
-
-  const closeProfileModal = () => {
-    setShowProfileModal(false);
-  };
-
-  // Protected content container - this is crucial for maintaining state
-  const ProtectedContent = () => {
-    return (
-      <MainLayout>
-        <Routes>
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </MainLayout>
-    );
+  const ProtectedRoute = ({ children }) => {
+    return isLoggedIn ? children : <Navigate to="/login" />;
   };
 
   return (
@@ -101,7 +81,7 @@ function App() {
             <DarkModeToggle />
 
             {isLoggedIn ? (
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative">
                 <button
                   onClick={toggleProfileMenu}
                   className="px-4 py-2 rounded-full bg-blue-700 hover:bg-blue-800 font-medium text-base transition-colors duration-200"
@@ -111,12 +91,12 @@ function App() {
                 {profileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 shadow-lg rounded-md z-50 dark:bg-gray-800 bg-white text-gray-900 dark:text-white">
                     <p className="px-4 py-2 border-b dark:border-gray-700 text-base">Hi, {user?.name || 'User'}</p>
-                    <button
-                      onClick={openProfileModal}
-                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-base transition-colors duration-200"
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-base transition-colors duration-200"
                     >
                       Edit Profile
-                    </button>
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-base transition-colors duration-200"
@@ -162,16 +142,27 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
-
-          {/* Removed direct profile route to prevent page reloads */}
-          {/* <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} /> */}
-
-          {/* All protected routes handled by a single component */}
-          {isLoggedIn ? (
-            <Route path="*" element={<ProtectedContent />} />
-          ) : (
-            <Route path="*" element={<Navigate to="/login" />} />
-          )}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/watchlist" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Watchlist />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <HomePage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          {/* Fallback route for any unmatched routes */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>
