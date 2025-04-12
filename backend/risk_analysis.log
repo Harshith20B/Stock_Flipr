@@ -90,3 +90,13 @@ AttributeError: module 'yfinance.shared' has no attribute 'exceptions'
 2025-04-12 19:15:07,366 - root - INFO - Performing risk analysis for AAPL
 2025-04-12 19:29:09,516 - root - INFO - Performing risk analysis for AAPL
 2025-04-12 19:29:13,335 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:50:24,870 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:50:29,460 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:52:10,053 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:52:12,707 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:02,311 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:05,742 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:08,462 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:11,102 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:15,860 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:53:19,339 - root - INFO - Performing risk analysis for AAPL
