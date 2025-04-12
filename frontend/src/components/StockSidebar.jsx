@@ -1,107 +1,87 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useStockStore } from "../store/useStockStore";
 import { Plus, Minus, Search } from "lucide-react";
+import { toast } from "react-toastify";
 
 const StockSidebar = () => {
     const {
+        stocks,
         getStocks,
-        filteredStocks,
-        setSelectedStock,
-        selectedStock,
         searchQuery,
         setSearchQuery,
+        setSelectedStock,
+        selectedStock,
+        getWatchlist,
+        addToWatchlist,
+        removeFromWatchlist
     } = useStockStore();
 
-    const [watchlist, setWatchlist] = useState([]);
+    const [watchlistSymbols, setWatchlistSymbols] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const [filteredStocks, setFilteredStocks] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchStocksAndWatchlist();
     }, []);
 
+    // Filter stocks based on search query
+    useEffect(() => {
+        if (stocks && stocks.length > 0) {
+            const filtered = stocks.filter(stock => 
+                stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (stock.name && stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+            setFilteredStocks(filtered);
+        }
+    }, [stocks, searchQuery]);
+
     const fetchStocksAndWatchlist = async () => {
         setIsLoading(true);
-        getStocks();
-        await fetchUserWatchlist();
-        setIsLoading(false);
-    };
-
-    const fetchUserWatchlist = async () => {
         try {
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
-                return; // User not logged in
-            }
-            
-            const response = await fetch(`${API_URL}/api/watchlist`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                return; // Failed to fetch watchlist
-            }
-            
-            const data = await response.json();
-            // Store just the symbols for easy comparison
-            setWatchlist(data.watchlist.map(stock => stock.symbol));
+            await getStocks();
+            const watchlist = await getWatchlist();
+            setWatchlistSymbols(watchlist.map(item => item.symbol));
         } catch (error) {
-            console.error('Error fetching watchlist in sidebar:', error);
+            console.error('Error fetching data:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const toggleWatchlist = async (symbol, e) => {
         e.stopPropagation();
         
-        const token = localStorage.getItem('token');
-        if (!token) {
-            return; // User not logged in
-        }
-
         try {
-            if (watchlist.includes(symbol)) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                toast.error('You must be logged in to manage your watchlist');
+                return;
+            }
+
+            if (watchlistSymbols.includes(symbol)) {
                 // Remove from watchlist
-                const response = await fetch(`${API_URL}/api/watchlist/${symbol}`, {
-                    method: 'DELETE',
-                    credentials: 'include',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    setWatchlist(prev => prev.filter(s => s !== symbol));
-                }
+                await removeFromWatchlist(symbol);
+                setWatchlistSymbols(prev => prev.filter(s => s !== symbol));
+                toast.success('Removed from watchlist');
             } else {
                 // Add to watchlist
-                const response = await fetch(`${API_URL}/api/watchlist`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ symbol })
-                });
-                
-                if (response.ok) {
-                    setWatchlist(prev => [...prev, symbol]);
-                }
+                await addToWatchlist(symbol);
+                setWatchlistSymbols(prev => [...prev, symbol]);
+                toast.success('Added to watchlist');
             }
         } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update watchlist');
             console.error('Error updating watchlist:', error);
         }
     };
 
-    const visibleStocks = filteredStocks();
+    const handleStockClick = (stock) => {
+        setSelectedStock(stock);
+        // Navigate to home page to show stock details
+        navigate('/');
+    };
 
     if (isLoading) {
         return (
@@ -143,18 +123,16 @@ const StockSidebar = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto px-2 py-2">
-                {visibleStocks.length === 0 ? (
+                {filteredStocks.length === 0 ? (
                     <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                         No stocks found matching "{searchQuery}"
                     </div>
                 ) : (
                     <ul className="space-y-1">
-                        {visibleStocks.map((stock) => (
+                        {filteredStocks.map((stock) => (
                             <li
                                 key={stock.symbol}
-                                onClick={() => {
-                                    setSelectedStock(stock);
-                                }}
+                                onClick={() => handleStockClick(stock)}
                                 className={`cursor-pointer px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${
                                     selectedStock?.symbol === stock.symbol
                                         ? "bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-100"
@@ -173,12 +151,12 @@ const StockSidebar = () => {
                                         <button
                                             onClick={(e) => toggleWatchlist(stock.symbol, e)}
                                             className={`text-xs flex items-center gap-1 mt-1 ${
-                                                watchlist.includes(stock.symbol) 
+                                                watchlistSymbols.includes(stock.symbol) 
                                                     ? "text-blue-600 dark:text-blue-400" 
                                                     : "text-gray-500 dark:text-gray-400"
                                             } hover:underline`}
                                         >
-                                            {watchlist.includes(stock.symbol) ? (
+                                            {watchlistSymbols.includes(stock.symbol) ? (
                                                 <>
                                                     <Minus className="w-3 h-3" /> Remove
                                                 </>

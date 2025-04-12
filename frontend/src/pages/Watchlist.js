@@ -4,60 +4,37 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useStockStore } from '../store/useStockStore';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 const Watchlist = () => {
-  const [watchlist, setWatchlist] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-  const { setSelectedStock } = useStockStore();
+  const { 
+    getWatchlist, 
+    removeFromWatchlist, 
+    setSelectedStock, 
+    watchlist,
+    isWatchlistLoading 
+  } = useStockStore();
 
   useEffect(() => {
     fetchWatchlist();
   }, []);
 
   const fetchWatchlist = async () => {
-    setIsLoading(true);
     try {
       const token = localStorage.getItem('token');
       
       if (!token) {
         toast.error('You are not logged in');
-        setIsLoading(false);
         return;
       }
       
-      const response = await fetch(`${API_URL}/api/watchlist`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast.error('Your session has expired. Please log in again.');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-          return;
-        }
-        throw new Error('Failed to fetch watchlist');
-      }
-      
-      const data = await response.json();
-      setWatchlist(data.watchlist);
+      await getWatchlist();
     } catch (error) {
       console.error('Error fetching watchlist:', error);
       toast.error('Failed to load watchlist data');
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const removeFromWatchlist = async (symbol, event) => {
+  const handleRemoveFromWatchlist = async (symbol, event) => {
     // Prevent row click event from firing
     event.stopPropagation();
     
@@ -69,28 +46,7 @@ const Watchlist = () => {
         return;
       }
       
-      const response = await fetch(`${API_URL}/api/watchlist/${symbol}`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          toast.error('Your session has expired. Please log in again.');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-          return;
-        }
-        throw new Error('Failed to remove stock from watchlist');
-      }
-      
-      // Update the watchlist state
-      setWatchlist(watchlist.filter(stock => stock.symbol !== symbol));
+      await removeFromWatchlist(symbol);
       toast.success('Stock removed from watchlist');
     } catch (error) {
       console.error('Error removing from watchlist:', error);
@@ -110,7 +66,7 @@ const Watchlist = () => {
     navigate('/');
   };
 
-  if (isLoading) {
+  if (isWatchlistLoading) {
     return (
       <div className="container mx-auto py-16 px-4 text-center">
         <div className="flex justify-center items-center">
@@ -129,7 +85,7 @@ const Watchlist = () => {
         <div className="p-6">
           <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">Your Watchlist</h2>
           
-          {watchlist.length === 0 ? (
+          {!watchlist || watchlist.length === 0 ? (
             <div className="text-center py-10">
               <p className="text-gray-600 dark:text-gray-400 mb-4">Your watchlist is empty.</p>
               <p className="text-gray-600 dark:text-gray-400">Add stocks to your watchlist to monitor them.</p>
@@ -149,19 +105,22 @@ const Watchlist = () => {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {watchlist.map(stock => (
                     <tr 
-                      key={stock._id} 
+                      key={stock._id || stock.symbol} 
                       onClick={() => handleStockClick(stock)}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{stock.symbol}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{stock.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">${stock.price.toFixed(2)}</td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${stock.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        {stock.change >= 0 ? '+' : ''}{stock.change.toFixed(2)}%
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                        ₹{typeof stock.price === 'number' ? stock.price.toFixed(2) : stock.price}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${parseFloat(stock.change || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {parseFloat(stock.change || 0) >= 0 ? '+' : ''}
+                        {typeof stock.change === 'number' ? stock.change.toFixed(2) : stock.change || '0.00'}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button 
-                          onClick={(e) => removeFromWatchlist(stock.symbol, e)}
+                          onClick={(e) => handleRemoveFromWatchlist(stock.symbol, e)}
                           className="text-red-600 hover:text-red-900 dark:hover:text-red-400"
                         >
                           Remove
