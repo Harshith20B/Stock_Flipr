@@ -14,28 +14,38 @@ const StockSidebar = () => {
         selectedStock,
         getWatchlist,
         addToWatchlist,
-        removeFromWatchlist
+        removeFromWatchlist,
+        industries
     } = useStockStore();
 
     const [watchlistSymbols, setWatchlistSymbols] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filteredStocks, setFilteredStocks] = useState([]);
+    const [selectedIndustry, setSelectedIndustry] = useState('All');
     const navigate = useNavigate();
 
     useEffect(() => {
         fetchStocksAndWatchlist();
     }, []);
 
-    // Filter stocks based on search query
     useEffect(() => {
         if (stocks && stocks.length > 0) {
-            const filtered = stocks.filter(stock => 
-                stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (stock.name && stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
-            );
+            let filtered = stocks;
+
+            if (searchQuery) {
+                filtered = filtered.filter(stock =>
+                    stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    (stock.name && stock.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                );
+            }
+
+            if (selectedIndustry !== 'All') {
+                filtered = filtered.filter(stock => stock.industry === selectedIndustry);
+            }
+
             setFilteredStocks(filtered);
         }
-    }, [stocks, searchQuery]);
+    }, [stocks, searchQuery, selectedIndustry]);
 
     const fetchStocksAndWatchlist = async () => {
         setIsLoading(true);
@@ -52,7 +62,7 @@ const StockSidebar = () => {
 
     const toggleWatchlist = async (symbol, e) => {
         e.stopPropagation();
-        
+
         try {
             const token = localStorage.getItem('token');
             if (!token) {
@@ -61,12 +71,10 @@ const StockSidebar = () => {
             }
 
             if (watchlistSymbols.includes(symbol)) {
-                // Remove from watchlist
                 await removeFromWatchlist(symbol);
                 setWatchlistSymbols(prev => prev.filter(s => s !== symbol));
                 toast.success('Removed from watchlist');
             } else {
-                // Add to watchlist
                 await addToWatchlist(symbol);
                 setWatchlistSymbols(prev => [...prev, symbol]);
                 toast.success('Added to watchlist');
@@ -79,7 +87,6 @@ const StockSidebar = () => {
 
     const handleStockClick = (stock) => {
         setSelectedStock(stock);
-        // Navigate to home page to show stock details
         navigate('/');
     };
 
@@ -92,23 +99,15 @@ const StockSidebar = () => {
     }
 
     return (
-        <div
-            className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col"
-            style={{
-                overflowY: 'auto',
-                scrollbarWidth: 'none',       // Firefox
-                msOverflowStyle: 'none'       // IE/Edge
-            }}
-        >
+        <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col overflow-y-auto scrollbar-hide">
             <style jsx="true">{`
-                /* Hide scrollbar for Chrome, Safari and Opera */
                 div::-webkit-scrollbar {
                     display: none;
                 }
             `}</style>
 
             <div className="p-4 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
-                <div className="relative">
+                <div className="relative mb-3">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-4 w-4 text-gray-400" />
                     </div>
@@ -120,12 +119,26 @@ const StockSidebar = () => {
                         className="w-full pl-10 p-2 rounded-lg border dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                 </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Filter by Industry</label>
+                    <select
+                        value={selectedIndustry}
+                        onChange={(e) => setSelectedIndustry(e.target.value)}
+                        className="w-full p-2 rounded-lg border dark:bg-gray-800 dark:text-white dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                        <option value="All">All</option>
+                        {industries.map((industry) => (
+                            <option key={industry} value={industry}>{industry}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-2 py-2">
+            <div className="flex-1 px-2 py-2">
                 {filteredStocks.length === 0 ? (
                     <div className="text-center py-10 text-gray-500 dark:text-gray-400">
-                        No stocks found matching "{searchQuery}"
+                        No stocks found matching your criteria.
                     </div>
                 ) : (
                     <ul className="space-y-1">

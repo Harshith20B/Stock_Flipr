@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-// Define the base API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export const useStockStore = create((set, get) => ({
@@ -19,8 +18,10 @@ export const useStockStore = create((set, get) => ({
   searchResults: [],
   watchlist: [],
   isWatchlistLoading: false,
+  industries: [],
 
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setIndustries: (industryList) => set({ industries: industryList }),
 
   setSelectedStock: (stock) => {
     set({ selectedStock: stock });
@@ -35,8 +36,17 @@ export const useStockStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await axios.get(`${API_URL}/api/stocks`);
-      set({ stocks: res.data, isLoading: false });
-      return res.data;
+      const stocks = res.data;
+
+      // Extract industries
+      const industriesSet = new Set(stocks.map(stock => stock.industry).filter(Boolean));
+      set({
+        stocks,
+        industries: Array.from(industriesSet).sort(),
+        isLoading: false
+      });
+
+      return stocks;
     } catch (err) {
       console.error('getStocks error:', err);
       set({ error: err.message, isLoading: false });
