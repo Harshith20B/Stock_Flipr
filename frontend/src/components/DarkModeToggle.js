@@ -32,19 +32,20 @@ const DarkModeToggle = () => {
   return (
     <button
       onClick={toggleDarkMode}
-      className="relative h-8 w-14 rounded-full p-1 transition-colors duration-300 focus:outline-none"
+      className="relative h-8 w-14 rounded-full p-1 transition-all duration-500 ease-in-out focus:outline-none border dark:border-gray-600 border-gray-300 shadow-md dark:shadow-sm"
       style={{
         backgroundColor: isDarkMode ? '#4B5563' : '#E5E7EB',
-        borderWidth: '2px',
-        borderColor: isDarkMode ? '#9CA3AF' : '#D1D5DB'
       }}
     >
       <div
-        className="absolute top-0.5 transform transition-transform duration-300 ease-in-out w-6 h-6 rounded-full flex items-center justify-center"
+        className={`absolute top-0.5 transform transition-transform duration-500 ease-in-out w-6 h-6 rounded-full flex items-center justify-center ${
+          isDarkMode ? 'translate-x-6' : 'translate-x-0'
+        }`}
         style={{
-          transform: isDarkMode ? 'translateX(24px)' : 'translateX(0)',
           backgroundColor: isDarkMode ? '#1F2937' : '#FFFFFF',
-          boxShadow: isDarkMode ? '0 0 2px 2px rgba(255,255,255,0.1)' : '0 1px 4px rgba(0,0,0,0.15)'
+          boxShadow: isDarkMode
+            ? '0 0 4px 2px rgba(255,255,255,0.15)'
+            : '0 2px 6px rgba(0,0,0,0.2)',
         }}
       >
         {isDarkMode ? (
