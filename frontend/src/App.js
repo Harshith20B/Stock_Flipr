@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import DarkModeToggle from './components/DarkModeToggle';
 import Signup from './pages/Signup';
@@ -12,10 +12,8 @@ import MainLayout from './components/MainLayout';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [user, setUser] = useState(null);
   const location = useLocation();
-  const profileMenuRef = useRef(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,25 +27,6 @@ function App() {
     setProfileMenuOpen(false);
   }, [location.pathname]);
 
-  // Add click outside listener to close profile menu
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setProfileMenuOpen(false);
-      }
-    }
-
-    // Add event listener if menu is open
-    if (profileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    
-    // Clean up
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [profileMenuOpen]);
-
   const toggleProfileMenu = () => setProfileMenuOpen(!profileMenuOpen);
 
   const handleLogout = () => {
@@ -58,26 +37,8 @@ function App() {
     setProfileMenuOpen(false);
   };
 
-  const openProfileModal = () => {
-    setShowProfileModal(true);
-    setProfileMenuOpen(false);
-  };
-
-  const closeProfileModal = () => {
-    setShowProfileModal(false);
-  };
-
-  // Protected content container - this is crucial for maintaining state
-  const ProtectedContent = () => {
-    return (
-      <MainLayout>
-        <Routes>
-          <Route path="/watchlist" element={<Watchlist />} />
-          <Route path="/" element={<HomePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </MainLayout>
-    );
+  const ProtectedRoute = ({ children }) => {
+    return isLoggedIn ? children : <Navigate to="/login" />;
   };
 
   return (
@@ -99,7 +60,7 @@ function App() {
             <DarkModeToggle />
 
             {isLoggedIn ? (
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative">
                 <button
                   onClick={toggleProfileMenu}
                   className="px-3 py-1 rounded-full bg-blue-700 hover:bg-blue-800 font-bold"
@@ -109,12 +70,12 @@ function App() {
                 {profileMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 shadow-lg rounded-md z-50 dark:bg-gray-800 bg-white text-gray-900 dark:text-white">
                     <p className="px-4 py-2 border-b dark:border-gray-700">Hi, {user?.name || 'User'}</p>
-                    <button
-                      onClick={openProfileModal}
-                      className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700"
+                    <Link
+                      to="/profile"
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       Edit Profile
-                    </button>
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block px-4 py-2 w-full text-left hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -134,40 +95,33 @@ function App() {
         </div>
       </nav>
 
-      {/* Profile Modal - Always rendered but conditionally visible */}
-      <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${showProfileModal ? '' : 'hidden'}`}>
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 m-4 max-w-xl w-full max-h-screen overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold dark:text-white">Edit Profile</h2>
-            <button 
-              onClick={closeProfileModal}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
-            >
-              ✕
-            </button>
-          </div>
-          <div className="dark:text-white">
-            <Profile onUpdate={closeProfileModal} />
-          </div>
-        </div>
-      </div>
-
       {/* Main content area with padding for fixed navbar */}
       <div className="pt-20 pb-8 px-4 container mx-auto h-screen">
         <Routes>
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
           <Route path="/verify-otp" element={<VerifyOtp />} />
-          
-          {/* Removed direct profile route to prevent page reloads */}
-          {/* <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} /> */}
-
-          {/* All protected routes handled by a single component */}
-          {isLoggedIn ? (
-            <Route path="*" element={<ProtectedContent />} />
-          ) : (
-            <Route path="*" element={<Navigate to="/login" />} />
-          )}
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } />
+          <Route path="/watchlist" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <Watchlist />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <MainLayout>
+                <HomePage />
+              </MainLayout>
+            </ProtectedRoute>
+          } />
+          {/* Fallback route for any unmatched routes */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>

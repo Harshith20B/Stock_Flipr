@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useStockStore } from "../store/useStockStore";
+import RiskAnalysis from "./RiskAnalysis";
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
@@ -22,10 +23,13 @@ const StockDetails = () => {
     selectedStock,
     stockDetails,
     stockInsights,
+    riskAnalysisData,  // New state property
     isStockDetailsLoading,
     isInsightsLoading,
+    isRiskAnalysisLoading, // New loading state
     getStockDetails,
     getStockInsights,
+    //getRiskAnalysis, // New function to fetch risk analysis
   } = useStockStore();
 
   const detailsEndRef = useRef(null);
@@ -37,6 +41,7 @@ const StockDetails = () => {
     if (selectedStock && selectedStock.symbol) {
       getStockDetails(selectedStock.symbol);
       getStockInsights(selectedStock.symbol);
+      //getRiskAnalysis(selectedStock.symbol);
     }
   }, [selectedStock, getStockDetails, getStockInsights]);
 
@@ -538,7 +543,11 @@ const StockDetails = () => {
             )}
           </div>
         )}
-
+        <RiskAnalysis 
+          stockSymbol={selectedStock?.symbol}
+          riskData={riskAnalysisData}
+          isLoading={isRiskAnalysisLoading}
+        />
         {/* Recent News */}
         {stockDetails.news && stockDetails.news.length > 0 && (
           <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
@@ -571,65 +580,10 @@ const StockDetails = () => {
             </div>
           </div>
         )}
-
-        {/* Historical Data Table */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Historical Price Data</h3>
-            <button 
-              onClick={handleExportData} 
-              className="flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium hover:underline"
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Export CSV
-            </button>
-                      </div>
-                      
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                          <thead className="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Open</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">High</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Low</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Close</th>
-                              <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Volume</th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {stockDetails.historical_prices
-                              .slice(0, showFullTable ? undefined : 10)
-                              .map((day, index) => (
-                                <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.date}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.open.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.high.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.low.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">${day.close.toFixed(2)}</td>
-                                  <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">{day.volume.toLocaleString()}</td>
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      
-                      {stockDetails.historical_prices.length > 10 && (
-                        <div className="mt-4 text-center">
-                          <button
-                            onClick={() => setShowFullTable(!showFullTable)}
-                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                          >
-                            {showFullTable ? "Show Less" : `Show All (${stockDetails.historical_prices.length} days)`}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div ref={detailsEndRef}></div>
-                  </div>
-                </div>
-              );
-            };
+          {/* <div ref={detailsEndRef}></div> */}
+        </div>
+      </div>
+    );
+};
             
-            export default StockDetails;
+export default StockDetails;
