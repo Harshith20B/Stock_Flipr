@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useStockStore } from "../store/useStockStore";
 import RiskAnalysis from "./RiskAnalysis";
+import { Button } from "../components/ui/button";
+
+import { Plus, Pencil, Trash, FileText } from "lucide-react";
 import { 
   ArrowUpCircle, 
   ArrowDownCircle, 
@@ -77,11 +80,24 @@ const StockDetails = () => {
           <h2 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100">
             {selectedStock.symbol}
           </h2>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <DollarSign className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4" />
-            <p className="text-gray-700 dark:text-gray-300 text-lg">No stock data available for {selectedStock.symbol}</p>
+          {/* Notes Button Group */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => console.log("Add Note")}>
+              <Plus className="w-4 h-4 mr-1" />
+              Add Note
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => console.log("Update Note")}>
+              <Pencil className="w-4 h-4 mr-1" />
+              Update
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => console.log("Remove Note")}>
+              <Trash className="w-4 h-4 mr-1" />
+              Remove
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => console.log("Get Notes")}>
+              <FileText className="w-4 h-4 mr-1" />
+              View Notes
+            </Button>
           </div>
         </div>
       </div>
@@ -220,11 +236,11 @@ const StockDetails = () => {
       {/* Sticky Header with improved styling */}
       <div className="p-6 border-b bg-gray-100 dark:bg-gray-800 sticky top-0 z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between">
-          <div className="flex items-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100 mr-3">
+          <div className="flex items-center flex-wrap gap-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
               {stockDetails.profile.name || selectedStock.symbol}
             </h2>
-            <span className="text-lg font-medium text-gray-500 dark:text-gray-400 mr-3">
+            <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
               {selectedStock.symbol}
             </span>
             {latest && (
@@ -241,15 +257,30 @@ const StockDetails = () => {
               ) : (
                 <ArrowDownCircle className="h-5 w-5 text-red-500 mr-1" />
               )}
-              <span className={`text-sm font-medium ${
-                isPriceUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}>
+              <span className={`text-sm font-medium ${isPriceUp ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {isPriceUp ? '+' : ''}{priceChange.toFixed(2)}%
               </span>
             </div>
           )}
         </div>
+        
+        {/* Note Buttons Row */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button className="flex items-center gap-1 border border-gray-300 dark:border-gray-700 px-3 py-1 rounded-md text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => console.log("Add Note")}>
+            <Plus className="w-4 h-4" /> Add Note
+          </button>
+          <button className="flex items-center gap-1 border border-gray-300 dark:border-gray-700 px-3 py-1 rounded-md text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => console.log("Update Note")}>
+            <Pencil className="w-4 h-4" /> Update
+          </button>
+          <button className="flex items-center gap-1 border border-gray-300 dark:border-gray-700 px-3 py-1 rounded-md text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => console.log("Remove Note")}>
+            <Trash className="w-4 h-4" /> Remove
+          </button>
+          <button className="flex items-center gap-1 border border-gray-300 dark:border-gray-700 px-3 py-1 rounded-md text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700" onClick={() => console.log("View Notes")}>
+            <FileText className="w-4 h-4" /> View Notes
+          </button>
+        </div>
       </div>
+
 
       {/* Scrollable Details with visual improvements */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 text-gray-800 dark:text-gray-200">
