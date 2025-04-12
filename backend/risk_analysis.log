@@ -56,3 +56,37 @@ AttributeError: module 'yfinance.shared' has no attribute 'exceptions'
 2025-04-12 18:32:44,135 - root - INFO - Performing risk analysis for TCS.TO
 2025-04-12 18:32:57,013 - root - INFO - Performing risk analysis for TCS.TO
 2025-04-12 18:36:39,789 - root - INFO - Performing risk analysis for TCS.TO
+2025-04-12 18:46:03,003 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:46:21,616 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:46:22,685 - root - INFO - Model for MSFT trained and saved with accuracy: 0.8655
+2025-04-12 18:46:39,802 - root - INFO - Model for MSFT trained and saved with accuracy: 0.8655
+2025-04-12 18:47:00,450 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:47:03,827 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:49:08,653 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:49:15,480 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:55:51,358 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:55:54,650 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:01,309 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:05,537 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:09,034 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:13,609 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:37,348 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:40,651 - root - INFO - Performing risk analysis for MSFT
+2025-04-12 18:56:51,979 - root - INFO - Performing risk analysis for AMZN
+2025-04-12 18:57:53,180 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 18:58:17,075 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 18:58:19,451 - root - INFO - Model for AAPL trained and saved with accuracy: 0.9418
+2025-04-12 18:58:29,659 - root - INFO - Performing risk analysis for META
+2025-04-12 18:59:03,151 - root - INFO - Model for META trained and saved with accuracy: 0.9418
+2025-04-12 19:04:55,510 - root - INFO - Performing risk analysis for META
+2025-04-12 19:05:01,666 - root - INFO - Performing risk analysis for META
+2025-04-12 19:06:13,840 - root - INFO - Performing risk analysis for META
+2025-04-12 19:06:25,706 - root - INFO - Performing risk analysis for META
+2025-04-12 19:10:34,193 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:10:42,058 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:14:47,462 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:14:53,947 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:15:01,576 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:15:07,366 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:29:09,516 - root - INFO - Performing risk analysis for AAPL
+2025-04-12 19:29:13,335 - root - INFO - Performing risk analysis for AAPL

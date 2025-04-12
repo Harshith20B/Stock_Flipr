@@ -10,6 +10,7 @@ const StockSidebar = () => {
         getStocks,
         searchQuery,
         setSearchQuery,
+        searchResults,
         setSelectedStock,
         selectedStock,
         getWatchlist,
@@ -31,16 +32,21 @@ const StockSidebar = () => {
     }, []);
 
     useEffect(() => {
-        if (stocks && stocks.length > 0) {
-            let filtered = stocks;
+        // Update display based on search or regular stock list
+        const stocksToFilter = searchQuery ? searchResults : stocks;
+        
+        if (stocksToFilter && stocksToFilter.length > 0) {
+            let filtered = stocksToFilter;
 
             if (selectedIndustry !== 'All') {
                 filtered = filtered.filter(stock => stock.industry === selectedIndustry);
             }
 
             setFilteredStocks(filtered);
+        } else {
+            setFilteredStocks([]);
         }
-    }, [stocks, selectedIndustry]);
+    }, [stocks, searchResults, selectedIndustry, searchQuery]);
 
     const fetchStocksAndWatchlist = async () => {
         setIsLoading(true);
@@ -106,7 +112,8 @@ const StockSidebar = () => {
     }
 
     return (
-            <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col overflow-y-auto scrollbar-none">            <div className="p-4 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
+        <div className="w-80 bg-white dark:bg-gray-900 shadow-lg h-full border-r dark:border-gray-800 flex flex-col overflow-y-auto scrollbar-none">
+            <div className="p-4 border-b dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
                 <div className="relative mb-3">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-4 w-4 text-gray-400" />
@@ -137,6 +144,21 @@ const StockSidebar = () => {
             </div>
 
             <div className="flex-1 px-2 py-2">
+                {searchQuery && (
+                    <div className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 flex justify-between">
+                        <span>Results for: <span className="font-medium">{searchQuery}</span></span>
+                        <button 
+                            onClick={() => {
+                                setInputValue('');
+                                setSearchQuery('');
+                            }}
+                            className="text-blue-500 hover:underline"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
+                
                 {filteredStocks.length === 0 ? (
                     <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                         {searchQuery.length > 0 ?

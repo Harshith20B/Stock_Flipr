@@ -47,50 +47,55 @@ export const useStockStore = create((set, get) => ({
     }
   },
   
-  searchStocks: async (query) => {
-    if (!query || query.length < 2) {
-      return set({ searchResults: [] });
-    }
-  
-    set({ isLoading: true, error: null });
-    try {
-      const res = await axiosInstance.get(`/api/stocks/search?name=${encodeURIComponent(query)}`);
-      const filtered = res.data.filter(
-        stock => stock?.lastClose !== null && stock?.lastClose !== undefined && !isNaN(stock.lastClose)
-      );
-  
-      set({
-        searchResults: filtered,
-        stocks: filtered,
-        isLoading: false
-      });
-  
-      return filtered;
-    } catch (err) {
-      console.error('searchStocks error:', err);
-      set({ error: err.message, isLoading: false });
-      return [];
-    }
-  },
-  
-  
-  // Update setSearchQuery to trigger API search immediately
-  // In useStockStore.js
+  // These are the specific functions you need to modify in your useStockStore.js file
 
-// Update this function
+// Update this function in your useStockStore.js
+searchStocks: async (query) => {
+  if (!query || query.length < 2) {
+    console.log("Search query too short:", query);
+    return set({ searchResults: [] });
+  }
+
+  set({ isLoading: true, error: null });
+  try {
+    console.log("Making API request to search stocks:", query);
+    const searchUrl = `/api/stocks/search?name=${encodeURIComponent(query)}`;
+    console.log("Search URL:", searchUrl);
+    
+    const res = await axiosInstance.get(searchUrl);
+    console.log("Raw API search response:", res.data);
+    
+    const filtered = res.data.filter(
+      stock => stock?.lastClose !== null && stock?.lastClose !== undefined && !isNaN(stock.lastClose)
+    );
+    
+    console.log("Filtered search results:", filtered);
+    console.log("Filtered out", res.data.length - filtered.length, "stocks with invalid lastClose");
+
+    set({
+      searchResults: filtered,
+      isLoading: false
+    });
+
+    return filtered;
+  } catch (err) {
+    console.error('searchStocks error:', err);
+    set({ error: err.message, isLoading: false });
+    return [];
+  }
+},
+
 setSearchQuery: (query) => {
   set({ searchQuery: query });
   
   // Only search if query is not empty
   if (query.trim() !== '') {
-      get().searchStocks(query);
+    get().searchStocks(query);
   } else {
-      // Reset to default stocks list when search is cleared
-      get().getStocks();
-      set({ searchResults: [] });
+    // Just clear search results when search is cleared
+    set({ searchResults: [] });
   }
 },
-  
   setIndustries: (industryList) => set({ industries: industryList }),
 
   setSelectedStock: (stock) => {
