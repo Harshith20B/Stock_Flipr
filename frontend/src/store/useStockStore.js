@@ -3,6 +3,11 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
+// Create axios instance with base URL
+const axiosInstance = axios.create({
+  baseURL: API_URL
+});
+
 export const useStockStore = create((set, get) => ({
   stocks: [],
   selectedStock: null,
@@ -20,7 +25,50 @@ export const useStockStore = create((set, get) => ({
   isWatchlistLoading: false,
   industries: [],
 
-  setSearchQuery: (query) => set({ searchQuery: query }),
+  searchStocks: async (query) => {
+    if (!query || query.length < 2) {
+      return set({ searchResults: [] });
+    }
+  
+    set({ isLoading: true, error: null });
+    try {
+      const res = await axiosInstance.get(`/api/stocks/search?name=${encodeURIComponent(query)}`);
+      const filtered = res.data.filter(
+        stock => stock?.lastClose !== null && stock?.lastClose !== undefined && !isNaN(stock.lastClose)
+      );
+  
+      set({
+        searchResults: filtered,
+        stocks: filtered,
+        isLoading: false
+      });
+  
+      return filtered;
+    } catch (err) {
+      console.error('searchStocks error:', err);
+      set({ error: err.message, isLoading: false });
+      return [];
+    }
+  },
+  
+  
+  // Update setSearchQuery to trigger API search immediately
+  // In useStockStore.js
+
+// Update this function
+setSearchQuery: (query) => {
+  set({ searchQuery: query });
+  
+  // Only search if query is not empty
+  if (query.trim() !== '') {
+      get().searchStocks(query);
+  } else {
+      // Reset to default stocks list when search is cleared
+      get().getStocks();
+      set({ searchResults: [] });
+  }
+},
+  
   setIndustries: (industryList) => set({ industries: industryList }),
 
   setSelectedStock: (stock) => {
@@ -32,32 +80,43 @@ export const useStockStore = create((set, get) => ({
     }
   },
 
-  getStocks: async () => {
+  getStocks: async (query = '') => {
     set({ isLoading: true, error: null });
     try {
-      const res = await axios.get(`${API_URL}/api/stocks`);
+      let url = '/api/stocks';
+      if (query) {
+        url += `?query=${encodeURIComponent(query)}`;
+      }
+  
+      const res = await axiosInstance.get(url);
       const stocks = res.data;
-
-      // Extract industries
-      const industriesSet = new Set(stocks.map(stock => stock.industry).filter(Boolean));
+  
+      // Filter out stocks without valid price details
+      const validStocks = stocks.filter(
+        stock => stock?.lastClose !== null && stock?.lastClose !== undefined && !isNaN(stock.lastClose)
+      );
+  
+      const industriesSet = new Set(validStocks.map(stock => stock.industry).filter(Boolean));
+  
       set({
-        stocks,
+        stocks: validStocks,
         industries: Array.from(industriesSet).sort(),
         isLoading: false
       });
-
-      return stocks;
+  
+      return validStocks;
     } catch (err) {
       console.error('getStocks error:', err);
       set({ error: err.message, isLoading: false });
       return [];
     }
   },
+  
 
   getStockDetails: async (symbol) => {
     set({ isStockDetailsLoading: true, error: null });
     try {
-      const res = await axios.get(`${API_URL}/api/stocks/${symbol}`);
+      const res = await axiosInstance.get(`/api/stocks/${symbol}`);
       set({ stockDetails: res.data, isStockDetailsLoading: false });
       return res.data;
     } catch (err) {
@@ -70,7 +129,7 @@ export const useStockStore = create((set, get) => ({
   getStockInsights: async (symbol) => {
     set({ isInsightsLoading: true, error: null });
     try {
-      const res = await axios.get(`${API_URL}/api/stocks/${symbol}/insights`);
+      const res = await axiosInstance.get(`/api/stocks/${symbol}/insights`);
       set({ stockInsights: res.data, isInsightsLoading: false });
       return res.data;
     } catch (err) {
@@ -85,7 +144,7 @@ export const useStockStore = create((set, get) => ({
     try {
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`${API_URL}/api/stocks/${symbol}/history`, { headers });
+      const res = await axiosInstance.get(`/api/stocks/${symbol}/history`, { headers });
       set({ stockHistory: res.data.history || res.data, isHistoryLoading: false });
       return res.data;
     } catch (err) {
@@ -95,16 +154,13 @@ export const useStockStore = create((set, get) => ({
     }
   },
 
-  searchStocks: async (query) => {
-    set({ isLoading: true, error: null });
-    try {
-      const res = await axios.get(`${API_URL}/api/stocks/search?name=${query}`);
-      set({ searchResults: res.data, isLoading: false });
-      return res.data;
-    } catch (err) {
-      console.error('searchStocks error:', err);
-      set({ error: err.message, isLoading: false });
-      return [];
+  // Select a stock from search results
+  selectSearchResult: (stock) => {
+    set({ selectedStock: stock });
+    if (stock?.symbol) {
+      get().getStockDetails(stock.symbol);
+      get().getStockInsights(stock.symbol);
+      get().getStockHistory(stock.symbol);
     }
   },
 
@@ -114,7 +170,7 @@ export const useStockStore = create((set, get) => ({
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No token found');
 
-      const res = await axios.get(`${API_URL}/api/watchlist`, {
+      const res = await axiosInstance.get(`/api/watchlist`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -133,7 +189,8 @@ export const useStockStore = create((set, get) => ({
       const token = localStorage.getItem('token');
       if (!token) throw new Error('You must be logged in');
 
-      const res = await axios.post(`${API_URL}/api/watchlist`, 
+      const res = await axiosInstance.post(
+        `/api/watchlist`, 
         { symbol },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -152,7 +209,7 @@ export const useStockStore = create((set, get) => ({
       const token = localStorage.getItem('token');
       if (!token) throw new Error('You must be logged in');
 
-      const res = await axios.delete(`${API_URL}/api/watchlist/${symbol}`, {
+      const res = await axiosInstance.delete(`/api/watchlist/${symbol}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -176,7 +233,10 @@ export const useStockStore = create((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  clearSearchResults: () => set({ searchResults: [] }),
+  clearSearchResults: () => {
+    set({ searchResults: [], searchQuery: '' });
+    get().getStocks(); // Reset to default stocks
+  },
 
   refreshCurrentStock: async () => {
     const { selectedStock } = get();

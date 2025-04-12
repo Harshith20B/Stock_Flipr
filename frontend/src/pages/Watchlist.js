@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useStockStore } from '../store/useStockStore';
 
 const Watchlist = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // Add this to check current location
   const { 
     getWatchlist, 
     removeFromWatchlist, 
@@ -59,11 +60,14 @@ const Watchlist = () => {
     setSelectedStock({
       symbol: stock.symbol,
       name: stock.name,
-      lastClose: stock.price
+      lastClose: stock.price,
+      industry: stock.industry // Make sure all needed properties are set
     });
     
-    // Navigate to the home page to show stock details
-    navigate('/');
+    // Always navigate to the home page when a stock is clicked
+    if (location.pathname !== '/') {
+      navigate('/');
+    }
   };
 
   if (isWatchlistLoading) {

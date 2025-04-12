@@ -6,7 +6,7 @@ const HomePage = () => {
   const { selectedStock } = useStockStore();
 
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className="h-full w-full">
       {!selectedStock ? <NoStockSelected /> : <StockDetails />}
     </div>
   );

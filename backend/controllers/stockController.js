@@ -1,57 +1,21 @@
 const axios = require('axios');
 const yfinance = require('yahoo-finance2').default;
-
+const { fetch_risk_results } = require('../utils/riskAnalysis');
 // API Configuration
 const FMP_API_KEY = process.env.FMP_API_KEY || 'YOUR_FMP_API_KEY'; // Add this to your .env file
 const BASE_URL = 'https://financialmodelingprep.com/api';
-
-// Get all stocks (for sidebar display)
-const getAllStocks = async (req, res) => {
-  try {
-    const defaultSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA'];
-    const stocks = [];
-
-    const promises = defaultSymbols.map(async (symbol) => {
-      try {
-        // Fetch stock quote data
-        const quote = await yfinance.quote(symbol);
-
-        // Fetch stock summary profile for industry and sector data
-        const summary = await yfinance.quoteSummary(symbol, { modules: ['assetProfile', 'summaryProfile'] });
-
-        // Extract profile data (industry, sector, etc.)
-        const profile = summary?.assetProfile || summary?.summaryProfile || {};
-
-        // Push stock data to the stocks array
-        stocks.push({
-          symbol: symbol,
-          name: quote.displayName || quote.shortName || symbol,
-          lastClose: quote.regularMarketPrice || null,
-          industry: profile.industry || 'Unknown',
-          sector: profile.sector || 'Unknown',
-        });
-      } catch (err) {
-        console.error(`Error fetching data for ${symbol}:`, err);
-      }
-    });
-
-    // Wait for all promises to resolve
-    await Promise.all(promises);
-
-    // Send the stocks array as response
-    res.status(200).json(stocks);
-  } catch (error) {
-    console.error('Error fetching stocks:', error);
-    res.status(500).json({ message: 'Error fetching stocks', error: error.message });
-  }
-};
+const portfolioCache = [];
 
 // Get a single stock by symbol
 const getStockBySymbol = async (req, res) => {
   try {
     const { symbol } = req.params;
+    
+    if (!symbol) {
+      return res.status(400).json({ message: 'Symbol is required' });
+    }
 
-    // Fetch stock details directly from API
+    // Fetch stock details directly from API, without relying on cached data
     const stockData = await getStockDetails(symbol);
 
     if (!stockData) {
@@ -69,8 +33,12 @@ const getStockBySymbol = async (req, res) => {
 const getStockInsights = async (req, res) => {
   try {
     const { symbol } = req.params;
+    
+    if (!symbol) {
+      return res.status(400).json({ message: 'Symbol is required' });
+    }
 
-    // Fetch historical data from API for insights
+    // Fetch historical data directly from API for insights
     const endDate = new Date();
     const startDate = new Date();
     startDate.setFullYear(startDate.getFullYear() - 1);
@@ -78,10 +46,13 @@ const getStockInsights = async (req, res) => {
     const historical = await yfinance.historical(symbol, {
       period1: startDate.toISOString().split('T')[0],
       period2: endDate.toISOString().split('T')[0],
+    }).catch(err => {
+      console.warn(`Warning: Could not fetch historical data for ${symbol}:`, err);
+      return [];
     });
 
     if (!historical || historical.length === 0) {
-      return res.status(404).json({ message: 'Stock data not found' });
+      return res.status(404).json({ message: 'Historical stock data not found' });
     }
 
     // Generate insights
@@ -142,7 +113,7 @@ const getStockInsights = async (req, res) => {
       insights.sentiment = await fetchStockSentiment(symbol);
     } catch (error) {
       console.error(`Error fetching sentiment for ${symbol}:`, error);
-      insights.sentiment = { overall_prediction: 'Neutral' };
+      insights.sentiment = { overall_prediction: 'Neutral', confidence: 50 };
     }
 
     res.status(200).json(insights);
@@ -152,7 +123,58 @@ const getStockInsights = async (req, res) => {
   }
 };
 
-// Search for stocks
+// Also updating getAllStocks to be more flexible with the searchQuery
+const getAllStocks = async (req, res) => {
+  try {
+    // Check if a search query was provided
+    const searchQuery = req.query.query?.trim();
+    
+    // If there's a search query, use searchStocks logic instead
+    if (searchQuery) {
+      // Redirect to the search function with the same query
+      req.query.name = searchQuery;
+      return searchStocks(req, res);
+    }
+    
+    // If no search query, continue with the default symbols
+    const defaultSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NFLX', 'NVDA'];
+    const stocks = [];
+
+    const promises = defaultSymbols.map(async (symbol) => {
+      try {
+        // Fetch stock quote data
+        const quote = await yfinance.quote(symbol);
+
+        // Fetch stock summary profile for industry and sector data
+        const summary = await yfinance.quoteSummary(symbol, { modules: ['assetProfile', 'summaryProfile'] });
+
+        // Extract profile data (industry, sector, etc.)
+        const profile = summary?.assetProfile || summary?.summaryProfile || {};
+
+        // Push stock data to the stocks array
+        stocks.push({
+          symbol: symbol,
+          name: quote.displayName || quote.shortName || symbol,
+          lastClose: quote.regularMarketPrice || null,
+          industry: profile.industry || 'Unknown',
+          sector: profile.sector || 'Unknown',
+        });
+      } catch (err) {
+        console.error(`Error fetching data for ${symbol}:`, err);
+      }
+    });
+
+    // Wait for all promises to resolve
+    await Promise.all(promises);
+
+    // Send the stocks array as response
+    res.status(200).json(stocks);
+  } catch (error) {
+    console.error('Error fetching stocks:', error);
+    res.status(500).json({ message: 'Error fetching stocks', error: error.message });
+  }
+};
+
 const searchStocks = async (req, res) => {
   try {
     const query = req.query.name?.trim();
@@ -161,21 +183,64 @@ const searchStocks = async (req, res) => {
       return res.status(400).json({ error: 'Please provide a valid stock name or symbol' });
     }
 
+    // Use the Financial Modeling Prep API to search across ALL available stocks
     const search_url = `${BASE_URL}/v3/search-ticker`;
     const params = {
       query: query,
-      limit: 10,
+      limit: 20, // Increased limit for more results
       apikey: FMP_API_KEY,
     };
 
+    // Get the search results from FMP API
     const response = await axios.get(search_url, { params });
-    res.status(200).json(response.data || []);
+    
+    if (!response.data || !Array.isArray(response.data) || response.data.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // For each search result, fetch additional data
+    const stocksPromises = response.data.map(async (item) => {
+      try {
+        // Try to fetch more details using yfinance
+        const quote = await yfinance.quote(item.symbol).catch(() => null);
+        
+        return {
+          symbol: item.symbol,
+          name: quote?.shortName || item.name || item.symbol,
+          lastClose: quote?.regularMarketPrice || null,
+          industry: item.exchangeShortName || 'Unknown', // Temporary value until profile is loaded
+          sector: 'Finance', // Default sector for now
+          exchange: item.exchange || 'Unknown',
+        };
+      } catch (err) {
+        console.error(`Error fetching detailed data for ${item.symbol}:`, err);
+        // Return basic search result if details fetch fails
+        return {
+          symbol: item.symbol,
+          name: item.name || item.symbol,
+          lastClose: null,
+          industry: 'Unknown',
+          sector: 'Unknown',
+          exchange: item.exchange || 'Unknown',
+        };
+      }
+    });
+
+    // Use Promise.allSettled to handle any potential API errors for individual stocks
+    const results = await Promise.allSettled(stocksPromises);
+    const stocks = results
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value);
+
+    res.status(200).json(stocks);
   } catch (error) {
     console.error('Search error:', error);
-    res.status(500).json({ error: 'An unexpected error occurred' });
+    res.status(500).json({ 
+      error: 'An unexpected error occurred while searching for stocks',
+      details: error.message 
+    });
   }
 };
-
 // Helper functions
 
 // Fetch stock details from external APIs
@@ -272,26 +337,98 @@ async function getStockDetails(symbol) {
     return null;
   }
 }
-
-// Simple sentiment analysis function (would need to be replaced with actual API)
+// Fetch stock sentiment from Python sentiment analysis system
 async function fetchStockSentiment(symbol) {
   try {
-    const sentiments = ['Bullish', 'Neutral', 'Bearish'];
-    const randomSentiment = sentiments[Math.floor(Math.random() * sentiments.length)];
-
-    return {
-      overall_prediction: randomSentiment,
-      confidence: Math.round(50 + Math.random() * 40),
-    };
+    // Call the Python sentiment analysis module
+    const { spawn } = require('child_process');
+    
+    return new Promise((resolve, reject) => {
+      // Assuming the Python file is in a 'sentiment' folder
+      const pythonProcess = spawn('python', ['sentiment/sentiment_analyzer.py', symbol]);
+      
+      let dataString = '';
+      
+      // Collect data from script output
+      pythonProcess.stdout.on('data', (data) => {
+        dataString += data.toString();
+      });
+      
+      // Handle errors
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`Python script error: ${data}`);
+      });
+      
+      pythonProcess.on('close', (code) => {
+        if (code !== 0) {
+          console.warn(`Python process exited with code ${code}`);
+          // Return a fallback if Python script fails
+          resolve({ 
+            overall_prediction: 50, 
+            overall_sentiment: "Neutral",
+            confidence: 50 
+          });
+        } else {
+          try {
+            // Parse the output from Python
+            // The output format might need adjustment based on what your Python script returns
+            const result = JSON.parse(dataString);
+            
+            // Format the result to match the expected structure
+            resolve({
+              overall_prediction: result.overall_sentiment || "Neutral",
+              confidence: result.overall_prediction || 50,
+              news: result.news || []
+            });
+          } catch (err) {
+            console.error("Error parsing Python output:", err);
+            // Return fallback if parsing fails
+            resolve({ 
+              overall_prediction: "Neutral", 
+              confidence: 50 
+            });
+          }
+        }
+      });
+    });
   } catch (error) {
     console.error(`Error in sentiment analysis for ${symbol}:`, error);
     return { overall_prediction: 'Neutral', confidence: 50 };
   }
 }
+const getStockRiskAnalysis = async (req, res) => {
+  try {
+    const { symbol } = req.params;
+    
+    if (!symbol) {
+      return res.status(400).json({ error: 'Stock symbol is required' });
+    }
 
+    // Call the Python-based risk analysis function
+    const riskResults = await fetch_risk_results(symbol, portfolioCache);
+
+    // If there was an error in the risk analysis
+    if (riskResults.error) {
+      console.warn(`Risk analysis warning for ${symbol}:`, riskResults.error);
+      return res.status(200).json({
+        error: riskResults.error,
+        symbol: symbol
+      });
+    }
+
+    return res.status(200).json(riskResults);
+  } catch (error) {
+    console.error(`Error in risk analysis for ${req.params.symbol}:`, error);
+    res.status(500).json({ 
+      error: 'Unable to perform risk analysis at this time',
+      details: error.message
+    });
+  }
+};
 module.exports = {
   getAllStocks,
   getStockBySymbol,
   getStockInsights,
   searchStocks,
+  getStockRiskAnalysis
 };
